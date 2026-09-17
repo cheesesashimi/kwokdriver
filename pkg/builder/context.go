@@ -1,18 +1,18 @@
-package kwokdriver
+package builder
 
 import (
 	"archive/tar"
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
+	"embed"
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"time"
-
-	imagesv1 "github.com/openshift/api/image/v1"
 )
+
+//go:embed image
+var buildContextFS embed.FS
 
 func getBuildContext(dynamicFiles map[string][]byte) (io.ReadSeeker, string, error) {
 	buf := bytes.NewBuffer([]byte{})
@@ -97,46 +97,4 @@ func getBuildContext(dynamicFiles map[string][]byte) (io.ReadSeeker, string, err
 	bufBytes := buf.Bytes()
 
 	return bytes.NewReader(bufBytes), fmt.Sprintf("sha256:%x", sha256.Sum256(bufBytes)), nil
-}
-
-func getImagesFromImageStream(is *imagesv1.ImageStream, relVersion string) (map[string]string, error) {
-	images := map[string]string{
-		"machineConfigOperator":    "machine-config-operator",
-		"infraImage":               "pod",
-		"keepalivedImage":          "keepalived-ipfailover",
-		"corednsImage":             "coredns",
-		"haproxyImage":             "haproxy-router",
-		"baremetalRuntimeCfgImage": "baremetal-runtimecfg",
-		"oauthProxy":               "oauth-proxy",
-		"kubeRbacProxy":            "kube-rbac-proxy",
-		"dockerRegistryImage":      "docker-registry",
-	}
-
-	for key, componentName := range images {
-		tagRef := lookupComponentFromImageStream(is, componentName)
-		if tagRef == nil {
-			return nil, fmt.Errorf("no image found for component %q", componentName)
-		}
-
-		images[key] = tagRef.From.Name
-	}
-
-	images["releaseVersion"] = relVersion
-
-	return images, nil
-}
-
-func getImagesJSONFromImageStream(is *imagesv1.ImageStream, relVersion string) ([]byte, error) {
-	images, err := getImagesFromImageStream(is, relVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(images)
-}
-
-func executableFileMode() int64 {
-	var modeVal int64 = 0o644
-	mode := os.FileMode(modeVal) | 0o111
-	return int64(mode)
 }

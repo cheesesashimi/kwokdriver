@@ -1,4 +1,4 @@
-package kwokdriver
+package manager
 
 import (
 	"context"
@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cheesesashimi/kwokdriver/pkg/api"
+	"github.com/cheesesashimi/kwokdriver/pkg/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestManager(t *testing.T) {
-	t.Parallel()
+	require.NoError(t, testhelpers.PrepareForTesting())
 
 	ctx := context.Background()
 
@@ -28,9 +30,8 @@ func TestManager(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
-			env, err := m.Provision(ctx, &ProvisionOpts{
+			env, err := m.Provision(ctx, &api.ProvisionOpts{
 				KwokClusterImage: "localhost/kwok:latest",
-				ReleaseImage:     "quay-proxy.ci.openshift.org/openshift/ci:rc_payload__5.0.0-0.ci-2026-09-14-041141",
 				TestName:         t.Name(),
 			})
 			assert.NoError(t, err)
@@ -40,16 +41,7 @@ func TestManager(t *testing.T) {
 				require.NoError(t, m.Destroy(ctx, env.ID))
 			})
 
-			kcfg, err := newKubeconfigs(ctx, env.Containers[0], env.Network)
-			require.NoError(t, err)
-
-			t.Run("kubeconfig-lib", func(t *testing.T) {
-				assert.NoError(t, runKubectl(t, kcfg.HostKubeconfig))
-			})
-
-			t.Run("generated", func(t *testing.T) {
-				assert.NoError(t, runKubectl(t, []byte(env.Kubeconfig)))
-			})
+			assert.NoError(t, runKubectl(t, []byte(env.Kubeconfig)))
 		})
 	}
 }
