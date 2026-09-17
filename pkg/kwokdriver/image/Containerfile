@@ -1,0 +1,69 @@
+ARG OPENSHIFT_RELEASE_IMAGE
+ARG KWOK_IMAGE
+FROM ${KWOK_IMAGE} AS kwok-base
+
+# This stage is the OpenShift release payload whose CRDs will be extracted and
+# installed within the KWOK cluster image.
+FROM ${OPENSHIFT_RELEASE_IMAGE} AS release-payload
+
+# This stage is used to build the image that will be used to install all of
+# the OpenShift CRDs within the KWOK image.
+FROM quay.io/fedora/fedora:latest AS workspace-image
+RUN dnf install -y \
+  curl \
+  git \
+  jq \
+  kubectl \
+  openssl \
+  python3 \
+  python3-pyyaml \
+  yq && \
+  dnf clean all
+
+# This is needed because the KWOK image does not include etcdctl. This ensures
+# that we can restore the etcd snapshot without downloading any other
+# dependencies.
+FROM workspace-image AS fetch-etcd
+COPY --from=kwok-base /root/.kwok/cache /root/.kwok/cache
+WORKDIR /etcd
+COPY fetch-etcd.sh /etcd/
+RUN chmod +x /etcd/fetch-etcd.sh && /etcd/fetch-etcd.sh
+
+# This is where all of the CRDs are installed by using the
+# setup-kwok-cluster.sh script.
+FROM workspace-image AS workspace
+ARG MCO_VERSION_HASH
+ARG RELEASE_VERSION
+ARG RHEL_COREOS_IMAGE
+ARG RHEL_COREOS_EXT_IMAGE
+ARG OPENSHIFT_RELEASE_IMAGE
+COPY --from=release-payload /release-manifests /release-image/release-manifests
+COPY --from=release-payload /manifests /release-image/manifests
+COPY clusterversion.yaml /script/clusterversion.yaml
+COPY featuregates.yaml /script/featuregates.yaml
+COPY setup-kwok-cluster.sh /script/setup-kwok-cluster.sh
+COPY --from=kwok-base /entrypoint.sh /entrypoint.sh
+COPY --from=kwok-base /usr/local/bin/ /usr/local/bin/
+COPY --from=kwok-base /root/.kwok /root/.kwok
+COPY images.json /images.json
+COPY build.json /build.json
+RUN chmod +x /script/setup-kwok-cluster.sh && /script/setup-kwok-cluster.sh
+
+# In the final stage, we copy all of the retrieved etcd binaries, the KWOK
+# state files, and the etcd snapshot into the original KWOK base image.
+FROM kwok-base AS final
+ARG MCO_VERSION_HASH
+ARG RELEASE_VERSION
+ARG OPENSHIFT_RELEASE_IMAGE
+ARG KWOK_IMAGE
+ARG BUILD_CONTEXT_HASH
+COPY --from=fetch-etcd /root/.kwok/cache/https/github.com/etcd-io /root/.kwok/cache/https/github.com/etcd-io
+COPY --from=workspace /root/cluster.db /root/cluster.db
+COPY build.json /root/build.json
+COPY kwok-container-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+LABEL OPENSHIFT_RELEASE_IMAGE="${OPENSHIFT_RELEASE_IMAGE}"
+LABEL OPENSHIFT_RELEASE_VERSION="${RELEASE_VERSION}"
+LABEL KWOK_BASE_IMAGE="${KWOK_IMAGE}"
+LABEL MCO_VERSION_HASH="${MCO_VERSION_HASH}"
+LABEL BUILD_CONTEXT_HASH="${BUILD_CONTEXT_HASH}"

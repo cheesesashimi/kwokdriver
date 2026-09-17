@@ -1,0 +1,98 @@
+apiVersion: config.openshift.io/v1
+kind: ClusterVersion
+metadata:
+  name: version
+spec:
+  clusterID: a35025f8-332a-4e8a-896d-dd72a9654195
+  overrides:
+  - group: config.openshift.io
+    kind: ClusterImagePolicy
+    name: openshift
+    namespace: ""
+    unmanaged: true
+status:
+  availableUpdates: null
+  capabilities:
+    enabledCapabilities:
+    - Build
+    - CSISnapshot
+    - CloudControllerManager
+    - CloudCredential
+    - Console
+    - DeploymentConfig
+    - ImageRegistry
+    - Ingress
+    - Insights
+    - MachineAPI
+    - NodeTuning
+    - OperatorLifecycleManager
+    - OperatorLifecycleManagerV1
+    - Storage
+    - baremetal
+    - marketplace
+    - openshift-samples
+    knownCapabilities:
+    - Build
+    - CSISnapshot
+    - CloudControllerManager
+    - CloudCredential
+    - Console
+    - DeploymentConfig
+    - ImageRegistry
+    - Ingress
+    - Insights
+    - MachineAPI
+    - NodeTuning
+    - OperatorLifecycleManager
+    - OperatorLifecycleManagerV1
+    - Storage
+    - baremetal
+    - marketplace
+    - openshift-samples
+  conditions:
+  - lastTransitionTime: "2026-07-22T17:05:58Z"
+    message: The update channel has not been configured.
+    reason: NoChannel
+    status: "False"
+    type: RetrievedUpdates
+  - lastTransitionTime: "2026-07-22T17:05:58Z"
+    message: Disabling ownership via cluster version overrides prevents updates between
+      minor or major versions. Please remove overrides before requesting a minor or
+      major version update.
+    reason: ClusterVersionOverrides
+    status: "False"
+    type: Upgradeable
+  - lastTransitionTime: "2026-07-22T17:05:58Z"
+    message: Capabilities match configured spec
+    reason: AsExpected
+    status: "False"
+    type: ImplicitlyEnabledCapabilities
+  - lastTransitionTime: "2026-07-22T17:05:58Z"
+    message: Payload loaded version="5.0.0-0.ci-2026-07-21-191603" image="registry.build10.ci.openshift.org/ci-ln-b6nw4bk/release@sha256:796f0ad45029f80d88c69528441a8ce588876f3a16411b17c1788f1247ae6ef8"
+      architecture="amd64"
+    reason: PayloadLoaded
+    status: "True"
+    type: ReleaseAccepted
+  - lastTransitionTime: "2026-07-22T17:30:25Z"
+    message: Done applying 5.0.0-0.ci-2026-07-21-191603
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-07-22T17:30:25Z"
+    status: "False"
+    type: Failing
+  - lastTransitionTime: "2026-07-22T17:30:25Z"
+    message: Cluster version is 5.0.0-0.ci-2026-07-21-191603
+    status: "False"
+    type: Progressing
+  desired:
+    image: registry.build10.ci.openshift.org/ci-ln-b6nw4bk/release@sha256:796f0ad45029f80d88c69528441a8ce588876f3a16411b17c1788f1247ae6ef8
+    version: 5.0.0-0.ci-2026-07-21-191603
+  history:
+  - completionTime: "2026-07-22T17:30:25Z"
+    image: registry.build10.ci.openshift.org/ci-ln-b6nw4bk/release@sha256:796f0ad45029f80d88c69528441a8ce588876f3a16411b17c1788f1247ae6ef8
+    startedTime: "2026-07-22T17:05:58Z"
+    state: Completed
+    verified: false
+    version: 5.0.0-0.ci-2026-07-21-191603
+  observedGeneration: 2
+  versionHash: A2pxWOk3zIE=
